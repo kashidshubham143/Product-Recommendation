@@ -1,0 +1,103 @@
+import React from "react";
+import { NavLink } from "react-router-dom";
+
+function DashBord() {
+  return (
+    <>
+      {/* Navbar */}
+      <nav className="flex items-center justify-between bg-white shadow px-6 py-3 sticky top-0 z-50">
+        <div className="mx-5 text-2xl font-bold text-purple-600 ">FoodExpress</div>
+
+        {/* Dropdown Example */}
+        <select className="border rounded-lg px-3 py-1 text-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-400">
+          <option value="pune">Pune</option>
+          <option value="mumbai">Mumbai</option>
+          <option value="delhi">Delhi</option>
+        </select>
+
+        {/* Navigation Links */}
+        <ul className="flex items-center gap-6 ml-auto text-gray-900 font-medium">
+          <li>
+            <NavLink
+              className="hover:text-purple-600 transition "
+              to="/login"
+            >
+              Login
+            </NavLink>
+          </li>
+          <li>
+            <NavLink
+              className="hover:text-purple-600 transition"
+              to="/explore"
+            >
+              Explore
+            </NavLink>
+          </li>
+          <li>
+            <a
+              href="#about"
+              className="hover:text-purple-600 transition"
+            >
+              About Us
+            </a>
+          </li>
+          <li>
+            <a
+              href="#contact"
+              className="hover:text-purple-600 transition"
+            >
+              Contact Us
+            </a>
+          </li>
+        </ul>
+      </nav>
+
+      {/* Main Section */}
+      <main className="bg-gradient-to-r from-purple-100 via-pink-100 to-blue-100 h-[80vh] flex flex-col items-center justify-center text-center">
+        <h1 className="text-4xl md:text-5xl font-bold text-gray-800 mb-4">
+          Welcome to <span className="text-purple-600">FoodExpress</span>
+        </h1>
+        <p className="text-gray-600 text-lg max-w-xl">
+          Order groceries, snacks, beverages, and more delivered to your doorstep in minutes 🚀
+        </p>
+        <button className="mt-6 bg-purple-600 text-white px-6 py-2 rounded-xl shadow hover:bg-purple-700 transition">
+          Start Exploring
+        </button>
+      </main>
+
+      {/* Footer */}
+      <footer className="bg-white shadow mt-6 py-6">
+        <div className="container mx-auto px-6 grid md:grid-cols-2 gap-6">
+          {/* About */}
+          <div id="about">
+            <h3 className="text-lg font-semibold text-purple-600 mb-2">
+              About Us
+            </h3>
+            <p className="text-gray-600 text-sm leading-relaxed">
+              FoodExpress is your one-stop solution for instant groceries, fruits,
+              vegetables, snacks, and drinks delivered within minutes.
+            </p>
+          </div>
+
+          {/* Contact */}
+          <div id="contact">
+            <h3 className="text-lg font-semibold text-purple-600 mb-2">
+              Contact Us
+            </h3>
+            <p className="text-gray-600 text-sm leading-relaxed">
+              📍 Pune, Maharashtra <br />
+              📧 support@foodexpress.com <br />
+              📞 +91 98765 43210
+            </p>
+          </div>
+        </div>
+
+        <div className="text-center text-gray-500 text-sm mt-6">
+          © {new Date().getFullYear()} FoodExpress. All rights reserved.
+        </div>
+      </footer>
+    </>
+  );
+}
+
+export default DashBord;
