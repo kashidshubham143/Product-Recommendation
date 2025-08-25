@@ -44,4 +44,13 @@ exports.findImageUrl = (id) => { //find the url for delete image
       });
 }
 
+ // Fetch Products Based On their Categories
+ exports.getProducts=(id)=>{
+      return new Promise((resolve,rejects)=>{
+            db.query("select *from products where category_id=?",[id],(err,row)=>{
+                  if(err) rejects(err);
+                  else resolve(row);
+            });
+      });
+ }
 

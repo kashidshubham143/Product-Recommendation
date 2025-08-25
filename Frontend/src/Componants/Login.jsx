@@ -20,31 +20,33 @@ function LoginPage() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-        if (formData.role === "admin") {
-          // console.log(formData);
-          AdminService.CheckAdmin(formData)
-            .then((result) => {
-              if (result.data === "okey") navigate("/AdminDashBord");
-              else setMassege(result.data);
-            })
-            .catch((err) => {
-              // console.log(err);
-              setMassege(err.data);
-            });
-        }
-        else {
-          UserService.checkUser(formData)
-            .then((result) => {
-              // console.log(result);
-              if (result.data === "okey")
-                navigate("/UserDashBord"); // Navigate User Dashboard
-              else setMassege(result.data);
-            })
-            .catch((err) => {
-              // console.log(err);
-              setMassege(err.data);
-            });
-        }
+    if (formData.role === "admin") {
+      // console.log(formData);
+      AdminService.CheckAdmin(formData)
+        .then((result) => {
+          if (result.data === "okey") navigate("/AdminDashBord");
+          else setMassege(result.data);
+        })
+        .catch((err) => {
+          // console.log(err);
+          setMassege(err.data);
+        });
+    } else {
+      UserService.checkUser(formData)
+        .then((result) => {
+          // console.log(result);
+          if (result.data === "Invalid Crediatials") {
+            setMassege(result.data);``
+          } else {
+            //  console.log(result.data[0].id);
+            navigate("/UserDashBord",{state:{id:result.data[0].id}}); // Navigate User Dashboard
+          }
+        })
+        .catch((err) => {
+          // console.log(err);
+          setMassege(err.data);
+        });
+    }
   };
 
   return (
@@ -55,9 +57,11 @@ function LoginPage() {
         style={{ width: "400px" }}
       >
         <h2 className="text-center mb-4 text-primary">Login</h2>
-                {/* Role */}
+        {/* Role */}
         <div className="mb-3">
-          <label className="form-label text-success fw-bold fs-4 border-primary border-2">Login As</label>
+          <label className="form-label text-success fw-bold fs-4 border-primary border-2">
+            Login As
+          </label>
           <select
             name="role"
             value={formData.role}
@@ -111,8 +115,6 @@ function LoginPage() {
             required
           />
         </div>
-
-
 
         {/* Button */}
         <button type="submit" className="btn btn-primary w-100">

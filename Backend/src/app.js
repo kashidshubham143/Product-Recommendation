@@ -29,6 +29,8 @@ app.use("/admin", categoryRouter);
 app.use("/admin", adminRouter);
 
 const userRouter = require("./routes/userRouter");
+const cartRouter = require("./routes/cartRoutes.js")
 app.use("/", userRouter);
+app.use("/",cartRouter);
 
 module.exports = app;

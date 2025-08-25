@@ -1,10 +1,14 @@
 let express = require("express");
 let router = express.Router();
 let user = require("../controllers/userController.js")
+let product = require("../controllers/productController.js");
 
 router.get("/getUsers",user.getUsers);
 router.post("/register", user.saveUser); // User Data saved
 router.post("/login", user.LoginUser);   // login if user alredy prasent
+
+//For fetch Category wise Data 
+router.get("/showProducts/:id",product.showProducts);
 
 //Inside the Menu option
 // router.get("/profile", user.userProfile);

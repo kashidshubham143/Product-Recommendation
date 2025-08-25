@@ -1,55 +1,232 @@
 import React, { useState, useEffect } from "react";
+import { Dropdown } from "react-bootstrap";
 import AdminService from "../Service/AdminService";
+import UserService from "../Service/UserService";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
+import { useLocation } from "react-router-dom";
 
 export default function ProductPage() {
-  const [products, setProducts] = useState([]); // backend products
+  const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [selectedProduct, setSelectedProduct] = useState(null);
+  const [refresh, setRefresh] = useState(0);
+  const [cartCount, setCartCount] = useState(0);
+  const [cartProduct, setCartProduct] = useState([]);
+  const [showCart, setShowCart] = useState(false);
+  const [likes, setLikes] = useState({});
+  const [views, setViews] = useState({});
+  const [viewedProducts, setViewedProducts] = useState(new Set());
+  const [categoryProducts, setCategoryProducts] = useState([]);
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const productsPerPage = 8;
+
+  let location = useLocation();
+  let userId = location?.state?.id;
+
+  // Load products + categories
   useEffect(() => {
     AdminService.viweProduct()
-      .then((result) => {
-        // console.log(result.data);
-        setProducts(result.data);
+      .then((result) => setProducts(result.data))
+      .catch((err) => console.log(err));
+
+    AdminService.showCategories()
+      .then((result) => setCategories(result.data))
+      .catch((err) => console.log(err));
+  }, [refresh]);
+
+  // Filter by category
+  const categoryHandler = (id) => {
+    UserService.fetchProduct(id)
+      .then((res) => {
+        setProducts(res.data);
+        setCurrentPage(1);
       })
       .catch((err) => console.log(err));
-  }, []);
+  };
+
+  // Add to Cart
+  const addToCart = (product) => {
+    setCartCount((prev) => prev + 1);
+    setCartProduct((prev) => [...prev, product]);
+  };
+
+  // Like Handler
+  const toggleLike = (productId) => {
+    setLikes((prev) => {
+      if (prev[productId]) {
+        const updated = { ...prev };
+        delete updated[productId];
+        return updated;
+      } else {
+        return { ...prev, [productId]: true };
+      }
+    });
+  };
+
+  // Track views
+  useEffect(() => {
+    if (selectedProduct && !viewedProducts.has(selectedProduct.id)) {
+      console.log(selectedProduct)
+      setViews((prev) => ({
+        ...prev,
+        [selectedProduct.id]: (prev[selectedProduct.id] || 0) + 1,
+      }));
+      setViewedProducts((prev) => new Set(prev).add(selectedProduct.id));
+    }
+  }, [selectedProduct]);
+
+  // Load category products when modal opens
+  useEffect(() => {
+    if (selectedProduct) {
+      UserService.fetchProduct(selectedProduct.category_id)
+        .then((res) => setCategoryProducts(res.data))
+        .catch((err) => console.log(err));
+    }
+  }, [selectedProduct]);
+
+  // Pagination logic
+  const indexOfLastProduct = currentPage * productsPerPage;
+  const indexOfFirstProduct = indexOfLastProduct - productsPerPage;
+  const currentProducts = products.slice(
+    indexOfFirstProduct,
+    indexOfLastProduct
+  );
+  const totalPages = Math.ceil(products.length / productsPerPage);
+
+  const handlePrev = () => {
+    if (currentPage > 1) setCurrentPage((prev) => prev - 1);
+  };
+
+  const handleNext = () => {
+    if (currentPage < totalPages) setCurrentPage((prev) => prev + 1);
+  };
 
   return (
-    <div className="container py-4">
-      {/* Page Title */}
-      <h3 className="mb-4 text-center fw-bold">Browse Products</h3>
+    <>
+      <div className="container py-4">
+        {/* Header */}
+        <div className="d-flex justify-content-between align-items-center mb-4">
+          <h3 className="fw-bold">Browse Products</h3>
 
-      {/* Product Grid */}
-      <div className="row">
-        {products.length === 0 ? (
-          <p className="text-center text-muted">Loading products...</p>
-        ) : (
-          products.map((p) => (
-            <div className="col-6 col-md-auto mb-4 " key={p.id}>
-              <div
-                className="card shadow-sm h-100 ms-3"
-                style={{ cursor: "pointer" }}
-                onClick={() => setSelectedProduct(p)}
-              >
-                <img
-                  src={`http://localhost:3000${p.image_url}`}
-                  className="card-img-top"
-                  style={{ height: "180px",width:"200px", objectFit: "cover" }}
-                  alt={p.title}
-                />
-                <div className="card-body text-center">
-                  <h6 className="card-title">{p.name}</h6>
-                  <p className="text-success fw-bold">Save ₹{p.discount_price}</p>
-                  <strong className="text-muted w-25">{p.description}</strong>
-                  <strong className="text-success">{p.discount_price}</strong>
-                  <strong className="d-block">₹{p.price}</strong>
-                  <strong className="text-success">Save ₹{p.discount_price}</strong>
+          <Dropdown align="end">
+            <Dropdown.Toggle variant="light" id="dropdown-basic">
+              <i className="bi bi-person-circle fs-4"></i>
+            </Dropdown.Toggle>
+
+            <Dropdown.Menu>
+              <Dropdown.Item>📦 Your Orders</Dropdown.Item>
+              <Dropdown.Item>❤️ Wishlist</Dropdown.Item>
+              <Dropdown.Item>👤 Change Profile</Dropdown.Item>
+              <Dropdown.Item>🗑 Delete Profile</Dropdown.Item>
+              <Dropdown.Item>💳 Payment</Dropdown.Item>
+              <Dropdown.Item>⚙️ Settings</Dropdown.Item>
+              <Dropdown.Item>🏆 Rewards</Dropdown.Item>
+            </Dropdown.Menu>
+          </Dropdown>
+        </div>
+
+        {/* Cart Button */}
+        <div className="d-flex justify-content-end mb-3">
+          <button
+            className="btn btn-info fw-bold rounded-pill px-4"
+            onClick={() => setShowCart((prev) => !prev)}
+          >
+            <i className="bi bi-cart4"></i> Cart ({cartCount})
+          </button>
+        </div>
+
+        {/* Categories */}
+        <nav className="d-flex flex-wrap gap-2 mb-4">
+          <button
+            className="btn btn-outline-dark btn-sm"
+            onClick={() => setRefresh((r) => r + 1)}
+          >
+            All Products
+          </button>
+          {categories.map((cat) => (
+            <button
+              key={cat.id}
+              className="btn btn-outline-primary btn-sm"
+              onClick={() => categoryHandler(cat.id)}
+            >
+              {cat.name}
+            </button>
+          ))}
+        </nav>
+
+        {/* Product Grid */}
+        <div className="row">
+          {currentProducts.length === 0 ? (
+            <p className="text-center text-muted">Loading products...</p>
+          ) : (
+            currentProducts.map((p) => (
+              <div className="col-6 col-md-3 mb-4" key={p.id}>
+                <div className="card shadow-sm h-100 border-0">
+                  <img
+                    src={`http://localhost:3000${p.image_url}`}
+                    className="card-img-top rounded"
+                    style={{ height: "160px", objectFit: "cover" }}
+                    alt={p.name}
+                    onClick={() => setSelectedProduct(p)}
+                  />
+                  <div className="card-body text-center">
+                    <h6 className="fw-bold">{p.name}</h6>
+                    <p className="text-success fw-bold mb-1">
+                      ₹{p.discount_price}{" "}
+                      <span className="text-muted text-decoration-line-through ms-1">
+                        ₹{p.price}
+                      </span>
+                    </p>
+                    <div className="d-flex justify-content-between align-items-center">
+                      <button
+                        className="btn btn-sm btn-success"
+                        onClick={() => addToCart(p)}
+                      >
+                        <i className="bi bi-cart-plus"></i> Add
+                      </button>
+                      <button
+                        className={`btn btn-sm ${
+                          likes[p.id] ? "btn-danger" : "btn-outline-danger"
+                        }`}
+                        onClick={() => toggleLike(p.id)}
+                      >
+                        <i className="bi bi-heart"></i>
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))
+            ))
+          )}
+        </div>
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <nav className="d-flex justify-content-center mt-3">
+            <ul className="pagination">
+              <li className={`page-item ${currentPage === 1 ? "disabled" : ""}`}>
+                <button className="page-link" onClick={handlePrev}>
+                  Previous
+                </button>
+              </li>
+              <li className="page-item disabled">
+                <span className="page-link">
+                  Page {currentPage} of {totalPages}
+                </span>
+              </li>
+              <li
+                className={`page-item ${
+                  currentPage === totalPages ? "disabled" : ""
+                }`}
+              >
+                <button className="page-link" onClick={handleNext}>
+                  Next
+                </button>
+              </li>
+            </ul>
+          </nav>
         )}
       </div>
 
@@ -57,44 +234,170 @@ export default function ProductPage() {
       {selectedProduct && (
         <div
           className="modal fade show"
-          style={{ display: "block", background: "rgba(0,0,0,0.5)" }}
+          style={{ display: "inline-block", background: "rgba(0,0,0,0.5)" }}
         >
-          <div className="modal-dialog modal-dialog-centered">
-            <div className="modal-content">
+          <div className="modal-dialog modal-xl modal-dialog-centered">
+            <div className="modal-content shadow-lg">
               <div className="modal-header">
-                <h5>{selectedProduct.title}</h5>
+                <h5 className="fw-bold">{selectedProduct.name}</h5>
                 <button
                   type="button"
                   className="btn-close"
                   onClick={() => setSelectedProduct(null)}
                 ></button>
               </div>
-              <div className="modal-body text-center">
-                <img
-                  src={`http://localhost:3000${selectedProduct.image_url}`}
-                  className="img-fluid mb-3 rounded"
-                  alt={selectedProduct.title}
-                />
-                <h6 className="text-success fw-bold">₹{selectedProduct.price}</h6>
-                <p className="text-muted">
-                  Delicious & fresh product just for you.
-                </p>
+              <div className="modal-body">
+                <div className="row">
+                  {/* Left: Image + small info */}
+                  <div className="col-md-5 text-center border-end">
+                    <img
+                      src={`http://localhost:3000${selectedProduct.image_url}`}
+                      className="img-fluid mb-3 rounded"
+                      alt={selectedProduct.name}
+                      style={{ maxHeight: "300px", objectFit: "contain" }}
+                    />
+                    <p className="text-muted">{selectedProduct.description}</p>
+                  </div>
+
+                  {/* Right: Full info */}
+                  <div className="col-md-7">
+                    <h4 className="fw-bold">{selectedProduct.name}</h4>
+                    <h5 className="text-success fw-bold">
+                      ₹{selectedProduct.discount_price}
+                    </h5>
+                    <h6 className="text-muted fw-bold text-decoration-line-through">
+                      ₹{selectedProduct.price}
+                    </h6>
+                    <h6 className="text-primary fw-bold">
+                      Save ₹
+                      {selectedProduct.price - selectedProduct.discount_price}
+                    </h6>
+                    <p className="text-secondary">
+                      👁 Views: {views[selectedProduct.id] || 0} | ❤️ Likes:{" "}
+                      {likes[selectedProduct.id] ? 1 : 0}
+                    </p>
+
+                    <button
+                      className="btn btn-success btn-lg mt-3"
+                      onClick={() => addToCart(selectedProduct)}
+                    >
+                      <i className="bi bi-cart-plus"></i> Buy Now
+                    </button>
+                  </div>
+                </div>
+
+                {/* More products from same category */}
+                <hr />
+                <h6 className="fw-bold mb-3">
+                  More in {selectedProduct.category_name}
+                </h6>
+                <div className="row">
+                  {categoryProducts
+                    .filter((p) => p.id !== selectedProduct.id)
+                    .map((p) => (
+                      <div className="col-6 col-md-3 mb-3" key={p.id}>
+                        <div
+                          className="card h-100 shadow-sm"
+                          onClick={() => setSelectedProduct(p)}
+                          style={{ cursor: "pointer" }}
+                        >
+                          <img
+                            src={`http://localhost:3000${p.image_url}`}
+                            className="card-img-top rounded"
+                            style={{ height: "150px", objectFit: "cover" }}
+                            alt={p.name}
+                          />
+                          <div className="card-body text-center p-2">
+                            <h6 className="fw-bold small mb-0">{p.name}</h6>
+                            <small className="text-success fw-bold">
+                              ₹{p.discount_price}
+                            </small>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                </div>
               </div>
               <div className="modal-footer">
                 <button
-                  className="btn btn-secondary"
+                  className="btn btn-outline-secondary"
                   onClick={() => setSelectedProduct(null)}
                 >
                   Close
-                </button>
-                <button className="btn btn-success">
-                  <i className="bi bi-cart-plus"></i> Add to Cart
                 </button>
               </div>
             </div>
           </div>
         </div>
       )}
-    </div>
+
+      {/* Cart Modal (unchanged) */}
+      {showCart && (
+        <div
+          className="modal fade show"
+          style={{ display: "block", background: "rgba(0,0,0,0.5)" }}
+        >
+          <div className="modal-dialog modal-lg modal-dialog-centered">
+            <div className="modal-content shadow-lg">
+              <div className="modal-header">
+                <h5 className="fw-bold">🛒 Your Cart</h5>
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={() => setShowCart(false)}
+                ></button>
+              </div>
+              <div className="modal-body">
+                {cartProduct.length === 0 ? (
+                  <p className="text-center text-muted">Your cart is empty.</p>
+                ) : (
+                  <ul className="list-group">
+                    {cartProduct.map((item, index) => (
+                      <li
+                        key={index}
+                        className="list-group-item d-flex justify-content-between align-items-center"
+                      >
+                        <div className="d-flex align-items-center">
+                          <img
+                            src={`http://localhost:3000${item.image_url}`}
+                            alt={item.name}
+                            style={{
+                              width: "50px",
+                              height: "50px",
+                              objectFit: "cover",
+                            }}
+                            className="rounded me-3"
+                          />
+                          <div>
+                            <h6 className="mb-0">{item.name}</h6>
+                            <small className="text-success fw-bold">
+                              ₹{item.discount_price}
+                            </small>
+                          </div>
+                        </div>
+                        <span className="badge bg-primary rounded-pill">1</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+              <div className="modal-footer">
+                <button
+                  className="btn btn-outline-secondary"
+                  onClick={() => setShowCart(false)}
+                >
+                  Close
+                </button>
+                {cartProduct.length > 0 && (
+                  <button className="btn btn-success">
+                    <i className="bi bi-bag-check"></i> Checkout
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }

@@ -23,15 +23,18 @@ exports.saveUser = ((req, res) => {
 exports.LoginUser = (req, res) => {
   const { email, password } = req.body;
   usermodel.checkusers(email, password).then((result) => {
-    res.send("okey");
+    // console.log(result);
+    res.send(result);
   }).catch((err) => {
     console.log(err);
-    res.send("Invalid Crediatials ");
+    res.send("Invalid Crediatials");
   });
 }
 
-exports.deleteUser
+// exports.deleteUser
 // exports.likeProduct=(req,res)=>{
 //   res.send("Show Liked Products to that user ");
 //   // res.render("likedProd");
 // }
+
+

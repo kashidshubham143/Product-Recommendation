@@ -13,14 +13,15 @@ exports.createProduct = (req, res) => {   // Added Products
     p.then((result) => {
         res.send("Product added successfully!");
     }).catch((err) => {
-        res.send("Data Failed To Save");
         res.status(500).json(err);
+        res.send("Data Failed To Save");
+        
     });
 }
 exports.viewProduct = (req, res) => {
     
     prod.viewProducts().then((result) => {
-        console.log(result);
+        // console.log(result);
         res.send(result);
     }).catch((err) => {
         console.log(err);
@@ -84,4 +85,15 @@ exports.deleteProduct = (req, res) => { // Product Deleted From DataBase
     }).catch((err) => {
         res.send("Error" + err);
     });
+}
+
+//Fetch all Products on their Category
+exports.showProducts = (req,res) =>{
+  prod.getProducts(req.params.id).then((result)=>{
+    // console.log(result);
+    res.send(result);
+  }).catch((err)=>{
+    console.log(err);
+    res.send(err);
+  });
 }
