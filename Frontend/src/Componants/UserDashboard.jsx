@@ -1,40 +1,43 @@
-import React, { useState, useEffect } from "react";
-import { Dropdown } from "react-bootstrap";
-import AdminService from "../Service/AdminService";
-import UserService from "../Service/UserService";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
-import { useLocation } from "react-router-dom";
+import React, { useState, useEffect, useContext } from "react";
+import { Dropdown } from "react-bootstrap";
 
-export default function ProductPage() {
+import AdminService from "../Service/AdminService";
+import UserService from "../Service/UserService";
+import UserContext from "../context/UserContext";
+
+export default function UserDashBord() {
+  //!  cart (+) icon and likes views add in db and pyment setting wishlist order page link
+
+  console.log(" Runing");
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [refresh, setRefresh] = useState(0);
-  const [cartCount, setCartCount] = useState(0);
-  const [cartProduct, setCartProduct] = useState([]);
   const [showCart, setShowCart] = useState(false);
   const [likes, setLikes] = useState({});
   const [views, setViews] = useState({});
   const [viewedProducts, setViewedProducts] = useState(new Set());
   const [categoryProducts, setCategoryProducts] = useState([]);
+  const [searchProduct, setSearchProducts] = useState([]); //store products for searching
 
   const [currentPage, setCurrentPage] = useState(1);
   const productsPerPage = 8;
 
-  let location = useLocation();
-  let userId = location?.state?.id;
-
   // Load products + categories
   useEffect(() => {
     AdminService.viweProduct()
-      .then((result) => setProducts(result.data))
+      .then((result) => {
+        setProducts(result.data);
+        setSearchProducts(result.data); //add products in searchProduct
+      })
       .catch((err) => console.log(err));
 
     AdminService.showCategories()
       .then((result) => setCategories(result.data))
       .catch((err) => console.log(err));
-  }, [refresh]);
+  }, [refresh]); //refresh
 
   // Filter by category
   const categoryHandler = (id) => {
@@ -46,10 +49,68 @@ export default function ProductPage() {
       .catch((err) => console.log(err));
   };
 
+  // fetch User id andd Name that  Saved in Login page
+  const { user } = useContext(UserContext);
+
+  // Cart
+  const [cartCount, setCartCount] = useState(0);
+  const [cartRefresh, setCartRefresh] = useState(0);
+  //This Hook For Fetch Neccesory Data From Products and Carts
+  const [cartProduct, setCartProduct] = useState([]);
+
   // Add to Cart
   const addToCart = (product) => {
-    setCartCount((prev) => prev + 1);
-    setCartProduct((prev) => [...prev, product]);
+    UserService.addInCart(user.userId, product.id)
+      .then(() => {
+        // console.log(res);
+        setCartRefresh((prev) => prev + 1);
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+  };
+
+  //Fetched Carts Info From DB
+  useEffect(() => {
+    UserService.getCartData(user.userId)
+      .then((res) => {
+        // console.log(res);
+        setCartCount(res.data.length);
+        setCartProduct(res.data);
+        // setUserName(res.data[0].userName);
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+  }, [cartRefresh]);
+
+  // In Cart Descrese Product Quantity(Count)
+  let descreseQuantity = (id) => {
+    // console.log(id);
+    UserService.quantity(id,"minus")
+      .then((e) => {
+        // console.log(e.data);x
+        setCartRefresh((prev) => prev + 1);
+      })
+      .catch((err) => console.log(err));
+  };
+
+  let increseQuantity=(id)=>{
+    // console.log(id);
+    UserService.quantity(id,"plus").then((e)=>{
+      // console.log(e.data);
+      setCartRefresh((prev) => prev + 1);
+    }).catch((err)=>console.log(err));
+
+  }
+
+  // Search-Bar Logic
+  let searchBar = (val) => {
+    // console.log(val);
+    let searchVal = products.filter((item) =>
+      item.name.toLowerCase().includes(val.toLowerCase())
+    );
+    setSearchProducts(searchVal);
   };
 
   // Like Handler
@@ -68,7 +129,7 @@ export default function ProductPage() {
   // Track views
   useEffect(() => {
     if (selectedProduct && !viewedProducts.has(selectedProduct.id)) {
-      console.log(selectedProduct)
+      // console.log(selectedProduct);
       setViews((prev) => ({
         ...prev,
         [selectedProduct.id]: (prev[selectedProduct.id] || 0) + 1,
@@ -89,11 +150,11 @@ export default function ProductPage() {
   // Pagination logic
   const indexOfLastProduct = currentPage * productsPerPage;
   const indexOfFirstProduct = indexOfLastProduct - productsPerPage;
-  const currentProducts = products.slice(
+  const currentProducts = searchProduct.slice(
     indexOfFirstProduct,
     indexOfLastProduct
   );
-  const totalPages = Math.ceil(products.length / productsPerPage);
+  const totalPages = Math.ceil(searchProduct.length / productsPerPage);
 
   const handlePrev = () => {
     if (currentPage > 1) setCurrentPage((prev) => prev - 1);
@@ -102,9 +163,17 @@ export default function ProductPage() {
   const handleNext = () => {
     if (currentPage < totalPages) setCurrentPage((prev) => prev + 1);
   };
+  // console.log(user.userId);
+  if (!user.userId) {
+    return <h2>Plese Login...</h2>;
+  }
 
   return (
     <>
+      <h4 className="text-grey">
+        Hello welcome Back{" "}
+        <span className="fs-3 fw-bold text-danger">{user.userName}</span>
+      </h4>
       <div className="container py-4">
         {/* Header */}
         <div className="d-flex justify-content-between align-items-center mb-4">
@@ -118,15 +187,24 @@ export default function ProductPage() {
             <Dropdown.Menu>
               <Dropdown.Item>📦 Your Orders</Dropdown.Item>
               <Dropdown.Item>❤️ Wishlist</Dropdown.Item>
-              <Dropdown.Item>👤 Change Profile</Dropdown.Item>
-              <Dropdown.Item>🗑 Delete Profile</Dropdown.Item>
+              <Dropdown.Item>👤 Profile</Dropdown.Item>
               <Dropdown.Item>💳 Payment</Dropdown.Item>
               <Dropdown.Item>⚙️ Settings</Dropdown.Item>
-              <Dropdown.Item>🏆 Rewards</Dropdown.Item>
             </Dropdown.Menu>
           </Dropdown>
         </div>
-
+        {/* Search Bar To Search Product Carts */}
+        <div>
+          <input
+            type="text"
+            name="search"
+            placeholder=" Search here.."
+            className="py-2 border-1 rounded-start w-75 ms-5 px-2 border-danger"
+            onChange={(e) => {
+              searchBar(e.target.value);
+            }}
+          />
+        </div>
         {/* Cart Button */}
         <div className="d-flex justify-content-end mb-3">
           <button
@@ -206,7 +284,9 @@ export default function ProductPage() {
         {totalPages > 1 && (
           <nav className="d-flex justify-content-center mt-3">
             <ul className="pagination">
-              <li className={`page-item ${currentPage === 1 ? "disabled" : ""}`}>
+              <li
+                className={`page-item ${currentPage === 1 ? "disabled" : ""}`}
+              >
                 <button className="page-link" onClick={handlePrev}>
                   Previous
                 </button>
@@ -348,6 +428,7 @@ export default function ProductPage() {
                 ></button>
               </div>
               <div className="modal-body">
+                {/* Show Carts Data when click Carts */}
                 {cartProduct.length === 0 ? (
                   <p className="text-center text-muted">Your cart is empty.</p>
                 ) : (
@@ -363,7 +444,7 @@ export default function ProductPage() {
                             alt={item.name}
                             style={{
                               width: "50px",
-                              height: "50px",
+                              height: "52px",
                               objectFit: "cover",
                             }}
                             className="rounded me-3"
@@ -373,9 +454,30 @@ export default function ProductPage() {
                             <small className="text-success fw-bold">
                               ₹{item.discount_price}
                             </small>
+                            <small className=" ms-2 text-muted">
+                              ₹{item.price}
+                            </small>
                           </div>
                         </div>
-                        <span className="badge bg-primary rounded-pill">1</span>
+                        <span className="p-2 fs-6 badge bg-primary rounded-pill">
+                          {item.quantity}
+                        </span>
+                        <div className="">
+                          {/* Minus Icon */}
+                          <button
+                            className="border-0 fs-3 bg-white "
+                            onClick={() => descreseQuantity(item.id)}
+                          >
+                            <i className="text-danger rounded-pill bi bi-dash-circle"></i>
+                          </button>
+                          {/* Plus Icon */}
+                          <button
+                            className=" border-0 fs-3 bg-white "
+                            onClick={() => increseQuantity(item.id)}
+                          >
+                            <i className="text-success rounded-pill bi bi-plus-circle"></i>
+                          </button>
+                        </div>
                       </li>
                     ))}
                   </ul>

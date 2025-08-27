@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import UserContext from "../context/UserContext";
 import UserService from "../Service/UserService";
 import AdminService from "../Service/AdminService";
 
@@ -18,12 +19,16 @@ function LoginPage() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  //fetched that function to set userId and Name
+  const { setUser } = useContext(UserContext);
+  //Submit Check User and Adminn are had in DB
   const handleSubmit = (e) => {
     e.preventDefault();
     if (formData.role === "admin") {
       // console.log(formData);
       AdminService.CheckAdmin(formData)
         .then((result) => {
+          // console.log(result);
           if (result.data === "okey") navigate("/AdminDashBord");
           else setMassege(result.data);
         })
@@ -32,14 +37,19 @@ function LoginPage() {
           setMassege(err.data);
         });
     } else {
+      // console.log(formData)
       UserService.checkUser(formData)
         .then((result) => {
           // console.log(result);
           if (result.data === "Invalid Crediatials") {
-            setMassege(result.data);``
+            setMassege(result.data);
           } else {
-            //  console.log(result.data[0].id);
-            navigate("/UserDashBord",{state:{id:result.data[0].id}}); // Navigate User Dashboard
+            // console.log(result.data[0]); //store this in use Context
+            setUser({
+              userId: result.data[0].id,
+              userName: result.data[0].name,
+            });
+            navigate("/UserDashBord"); // Navigate User Dashboard
           }
         })
         .catch((err) => {

@@ -11,7 +11,7 @@ import ManageProducts from "../Componants/ManageProducts";
 import AddProductPage from "../Componants/AddProductPage";
 // import ViewUsers from "../Componants/ViewUsers";
 
-function AdminDashboard() {
+function AdminDashBoard() {
 
     const [userCount, setUserCount] = useState(0);
   const [productCount, setProductCount] = useState(0);
@@ -184,4 +184,4 @@ function BackButton({ onBack }) {
   );
 }
 
-export default AdminDashboard;
+export default AdminDashBoard;

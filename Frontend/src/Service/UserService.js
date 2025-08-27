@@ -17,8 +17,14 @@ const UserService = {
   fetchProduct:(id)=>{
     return axios.get(`${API_URL}/showProducts/${id}`);
   },
-  addInCart:(userId,productId,cartCount)=>{
-    return axios.post(`${API_URL}/addProductInCart`,userId,productId,cartCount);
+  addInCart:(userId,productId)=>{
+    return axios.post(`${API_URL}/addProductInCart`,{productId:productId,userId:userId});
+  },
+  getCartData:(userId)=>{
+    return axios.get(`${API_URL}/getCarts/${userId}`);
+  },
+  quantity:(id,msg)=>{
+    return axios.get(`${API_URL}/quantity/${id}/${msg}`);
   },
 };
 
