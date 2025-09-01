@@ -23,12 +23,70 @@ exports.saveDB = (name, email, contact, password, address) => {
   });
 };
 
-exports.checkusers = (email, password) => {
-  return new Promise((resolve, reject) => {
-    db.query("SELECT * FROM users WHERE  email=? AND password = ?", [email, password], (err, row) => {
-      if (err) reject(err);
-      else if (row.length > 0) resolve(row);
-      else reject("Invalid Crediatials ");
+exports.userNameCheck = (key, val) => {
+  return new Promise((resolve, rejects) => {
+    db.query(`select *from users where ${key}=?`, [val], (err, row) => {
+      if (err) rejects(err);
+      else resolve(row);
+    });
+  });
+}
+
+//likes
+exports.showslike = (userId) => {
+  return new Promise((resolve, rejects) => {
+    db.query("select product_id, action_id as 'liked' from user_interactions where user_id=?", [userId], (err, row) => {
+      if (err) rejects(err);
+      else resolve(row);
+    });
+  });
+}
+
+exports.addLike = (userId, productId) => {
+  return new Promise((resolve, rejects) => {
+    db.query("insert into user_interactions(user_id,product_id,action_id) values(?,?,2)", [userId, productId], (err, row) => {
+      if (err) rejects(err);
+      else resolve(row);
+    });
+  });
+}
+exports.deleteLikes = (userId, productId) => {
+  return new Promise((resolve, rejects) => {
+    db.query("delete from user_interactions where user_id=? and product_id=?", [userId, productId], (err, row) => {
+      if (err) rejects(err)
+      else resolve(row)
+    });
+  });
+}
+exports.fetchAllLikes = () => {
+  return new Promise((resolve, rejects) => {
+    db.query("SELECT product_id, COUNT(action_id) AS liked FROM user_interactions WHERE action_id = 2 GROUP BY product_id", (err, row) => {
+      if (err) rejects(err);
+      else resolve(row);
+    });
+  })
+}
+exports.addNewView = (userId, productId) => {
+  return new Promise((resolve, rejects) => {
+    db.query("insert into user_interactions(user_id,product_id,action_id) values(?,?,1)", [userId, productId], (err, row) => {
+      if (err) rejects(err);
+      else resolve(row);
+    });
+  });
+}
+exports.allViews = () => {
+  return new Promise((resolve, rejects) => {
+    db.query("SELECT product_id, COUNT(action_id) AS viewed FROM user_interactions WHERE action_id = 1 GROUP BY product_id", (err, row) => {
+      if (err) rejects(err);
+      else resolve(row);
+    });
+  });
+}
+exports.userView = (userId) => {
+  return new Promise((resolve, rejects) => {
+    db.query("select  product_id from user_interactions where user_id=?", [userId], (err, row) => {
+      if (err) rejects(err);
+      else resolve(row);
     });
   });
 }
