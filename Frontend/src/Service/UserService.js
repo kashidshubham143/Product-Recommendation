@@ -26,6 +26,27 @@ const UserService = {
   quantity:(id,msg)=>{
     return axios.get(`${API_URL}/quantity/${id}/${msg}`);
   },
+  showLike:(userId)=>{
+    return axios.get(`${API_URL}/showLikes/${userId}`);
+  },
+  managelike:(userId,productId,msg)=>{ // Manage Likes
+      return axios.post(`${API_URL}/managelike`,{userId:userId,productId:productId,msg:msg});
+  },
+  fetchAllLikes:()=>{
+    return axios.get(`${API_URL}/fetchLikes`)
+  },
+  addView:(userId,productId)=>{
+    return axios.post(`${API_URL}/addView`,{userId:userId,productId:productId});
+  },
+  fetchViews:()=>{
+    return axios.get(`${API_URL}/fetchViews`);
+  },
+  fetchUserview:(userId)=>{
+    return axios.get(`${API_URL}/fetchUserview/${userId}`);
+  },
+  getProfile:(token)=>{ //Authenticate JWT Token
+    return axios.get(`${API_URL}/getProfile`,{headers:{Authorization:`Bearer ${token}`}});
+  }
 };
 
 export default UserService;

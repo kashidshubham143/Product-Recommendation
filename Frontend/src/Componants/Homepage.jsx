@@ -1,11 +1,19 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap/dist/js/bootstrap.bundle.min.js"; // for navbar & modal
 import "bootstrap-icons/font/bootstrap-icons.css";
+import UserService from "../Service/UserService";
 
-function HomePage() {
+function HomePage({ token }) {
   const navigate = useNavigate();
+  // console.log(token);
+
+  // Check user are present are not if prasent then navigat UseDashBoard not then login page
+ useEffect(()=>{
+   if (token) 
+         navigate("/UserDashBoard")
+ },[])
 
   const handleUserTypeChange = (e) => {
     const selected = e.target.value;

@@ -1,8 +1,9 @@
-import React, { useState, useContext } from "react";
+import React, { useState,useContext } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import UserContext from "../context/UserContext";
 import UserService from "../Service/UserService";
 import AdminService from "../Service/AdminService";
+import { useEffect } from "react";
 
 function LoginPage() {
   const [massege, setMassege] = useState("");
@@ -21,6 +22,14 @@ function LoginPage() {
 
   //fetched that function to set userId and Name
   const { setUser } = useContext(UserContext);
+
+  // check token had or not
+  const token=localStorage.getItem("jwtToken");
+
+  useEffect(()=>{
+       if(token) navigate("/UserDashBoard");
+  },[token]);
+
   //Submit Check User and Adminn are had in DB
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -44,12 +53,19 @@ function LoginPage() {
           if (result.data === "Invalid Crediatials") {
             setMassege(result.data);
           } else {
-            // console.log(result.data[0]); //store this in use Context
+            // console.log(result.data.token); //store this in use Context
+            localStorage.setItem(
+              "user", JSON.stringify({
+                id: result.data.data[0].id,
+                name: result.data.data[0].name,
+              }));
+            localStorage.setItem("jwtToken", result.data.token);
             setUser({
-              userId: result.data[0].id,
-              userName: result.data[0].name,
+              userId: result.data.data[0].id,
+              userName: result.data.data[0].name,
             });
-            navigate("/UserDashBord"); // Navigate User Dashboard
+            // setTokenCheck((prev)=>prev+1);
+            navigate("/UserDashBoard"); // Navigate User Dashboard
           }
         })
         .catch((err) => {
