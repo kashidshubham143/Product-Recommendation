@@ -2,28 +2,51 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import React, { useState, useEffect, useContext } from "react";
 import { Dropdown } from "react-bootstrap";
+import { FaSignOutAlt } from "react-icons/fa";
 
 import AdminService from "../Service/AdminService";
 import UserService from "../Service/UserService";
 import UserContext from "../context/UserContext";
+import { useNavigate } from "react-router-dom";
 
-export default function UserDashBord() {
-  //!  cart (+) icon and likes views add in db and pyment setting wishlist order page link
+export default function UserDashBoard() {
 
-  console.log(" Runing");
+console.log("UserDashboard rendered at", new Date().toISOString());
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
-  const [selectedProduct, setSelectedProduct] = useState(null);
   const [refresh, setRefresh] = useState(0);
   const [showCart, setShowCart] = useState(false);
-  const [likes, setLikes] = useState({});
-  const [views, setViews] = useState({});
-  const [viewedProducts, setViewedProducts] = useState(new Set());
   const [categoryProducts, setCategoryProducts] = useState([]);
   const [searchProduct, setSearchProducts] = useState([]); //store products for searching
 
   const [currentPage, setCurrentPage] = useState(1);
   const productsPerPage = 8;
+
+  // fetch User id andd Name that  Saved in Login page
+  const { user } = useContext(UserContext);
+  const navigate = useNavigate();
+
+  //Check user Valid or not ??
+  useEffect(() => {
+    if (!user.userId) { return;} //stop re-rendering 
+    let token = localStorage.getItem("jwtToken");
+    if (!user.userId || !token) {
+      return navigate("/login");
+    } else {
+      UserService.getProfile(token)
+        .then((e) => {
+          // console.log(e.data);
+          if(e.data!==user.userName) {
+            return navigate("/login");
+          };
+        })
+        .catch((err) => {
+          if(err.status==403){ localStorage.removeItem("jwtToken"); 
+            return navigate("/login");
+          }
+          console.log(err)});
+    }
+  }, []);
 
   // Load products + categories
   useEffect(() => {
@@ -41,16 +64,16 @@ export default function UserDashBord() {
 
   // Filter by category
   const categoryHandler = (id) => {
+    // console.log(id);
+    
     UserService.fetchProduct(id)
       .then((res) => {
-        setProducts(res.data);
+        // console.log(res.data);
+        setSearchProducts(res.data);
         setCurrentPage(1);
       })
       .catch((err) => console.log(err));
   };
-
-  // fetch User id andd Name that  Saved in Login page
-  const { user } = useContext(UserContext);
 
   // Cart
   const [cartCount, setCartCount] = useState(0);
@@ -70,7 +93,7 @@ export default function UserDashBord() {
       });
   };
 
-  //Fetched Carts Info From DB
+  // Fetched Carts Info From DB
   useEffect(() => {
     UserService.getCartData(user.userId)
       .then((res) => {
@@ -87,7 +110,7 @@ export default function UserDashBord() {
   // In Cart Descrese Product Quantity(Count)
   let descreseQuantity = (id) => {
     // console.log(id);
-    UserService.quantity(id,"minus")
+    UserService.quantity(id, "minus")
       .then((e) => {
         // console.log(e.data);x
         setCartRefresh((prev) => prev + 1);
@@ -95,16 +118,17 @@ export default function UserDashBord() {
       .catch((err) => console.log(err));
   };
 
-  let increseQuantity=(id)=>{
+  let increseQuantity = (id) => {
     // console.log(id);
-    UserService.quantity(id,"plus").then((e)=>{
-      // console.log(e.data);
-      setCartRefresh((prev) => prev + 1);
-    }).catch((err)=>console.log(err));
+    UserService.quantity(id, "plus")
+      .then((e) => {
+        // console.log(e.data);
+        setCartRefresh((prev) => prev + 1);
+      })
+      .catch((err) => console.log(err));
+  };
 
-  }
-
-  // Search-Bar Logic
+  //* Search-Bar Logic
   let searchBar = (val) => {
     // console.log(val);
     let searchVal = products.filter((item) =>
@@ -113,28 +137,90 @@ export default function UserDashBord() {
     setSearchProducts(searchVal);
   };
 
-  // Like Handler
+  //* Like Handler
+  const [likeRefresh, setLikeRefresh] = useState(0); //every time like are update then it should reflact
+  const [allLikes, setAllLikes] = useState([]);
+  useEffect(() => {
+    //Fetch All likes
+    UserService.fetchAllLikes()
+      .then((e) => {
+        // console.log(e);
+        const likesObject = Object.fromEntries(
+          e.data.map((item) => [item.product_id, item.liked])
+        );
+        setAllLikes(likesObject);
+      })
+      .catch((err) => console.log(err));
+  }, [likeRefresh]);
+
+  const [likes, setLikes] = useState({}); // store all likes product wise
+  useEffect(() => {
+    //fetch this ueser likes only.
+    UserService.showLike(user.userId)
+      .then((e) => {
+        // console.log(e);
+        const likesObject = Object.fromEntries(
+          e.data.map((item) => [item.product_id, item.liked])
+        );
+        // console.log(likesObject);
+        setLikes(likesObject);
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+  }, [likeRefresh]);
+
   const toggleLike = (productId) => {
-    setLikes((prev) => {
-      if (prev[productId]) {
-        const updated = { ...prev };
-        delete updated[productId];
-        return updated;
-      } else {
-        return { ...prev, [productId]: true };
-      }
-    });
+    //  console.log("Likes  "+JSON.stringify(likes));
+    const isLiked = !!likes[productId]; // check current state
+    const msg = isLiked ? "delete" : "add";
+
+    UserService.managelike(user.userId, productId, msg)
+      .then((e) => {
+        // console.log(e);
+        setLikeRefresh((prev) => prev + 1);
+      })
+      .catch((err) => console.log(err));
   };
 
-  // Track views
+  //* Track views
+  const [viewedProducts, setViewedProducts] = useState(new Set()); // save  here all view products
+  const [viewRefresh, setViewRefresh] = useState(0);
+  const [views, setViews] = useState({});
+
+  // fetch all products all views
   useEffect(() => {
+    UserService.fetchViews()
+      .then((e) => {
+        // console.log(e);
+        let viewObject = Object.fromEntries(
+          e.data.map((item) => [item.product_id, item.viewed])
+        );
+        setViews(viewObject);
+      })
+      .catch((err) => console.log(err));
+  }, [viewRefresh]);
+
+  const [selectedProduct, setSelectedProduct] = useState(null); // save those are selected
+
+  useEffect(() => {
+    // fetch user vise views
+    UserService.fetchUserview(user.userId)
+      .then((e) => {
+        // console.log(e);
+        setViewedProducts(new Set(e.data.map((item) => item.product_id))); //store the this user view products
+      })
+      .catch((err) => console.log(err));
+
+    //check product viewed or not if not then add view
     if (selectedProduct && !viewedProducts.has(selectedProduct.id)) {
       // console.log(selectedProduct);
-      setViews((prev) => ({
-        ...prev,
-        [selectedProduct.id]: (prev[selectedProduct.id] || 0) + 1,
-      }));
-      setViewedProducts((prev) => new Set(prev).add(selectedProduct.id));
+      UserService.addView(user.userId, selectedProduct.id)
+        .then((e) => {
+          // console.log(e);
+          setViewRefresh((prev) => prev + 1);
+        })
+        .catch((err) => console.log(err));
     }
   }, [selectedProduct]);
 
@@ -163,10 +249,6 @@ export default function UserDashBord() {
   const handleNext = () => {
     if (currentPage < totalPages) setCurrentPage((prev) => prev + 1);
   };
-  // console.log(user.userId);
-  if (!user.userId) {
-    return <h2>Plese Login...</h2>;
-  }
 
   return (
     <>
@@ -186,10 +268,11 @@ export default function UserDashBord() {
 
             <Dropdown.Menu>
               <Dropdown.Item>📦 Your Orders</Dropdown.Item>
-              <Dropdown.Item>❤️ Wishlist</Dropdown.Item>
-              <Dropdown.Item>👤 Profile</Dropdown.Item>
-              <Dropdown.Item>💳 Payment</Dropdown.Item>
+              <Dropdown.Item onClick={()=> navigate("/wishList")}>❤️ Wishlist</Dropdown.Item>
+              <Dropdown.Item onClick={()=>  navigate('/profile')}>👤 Profile</Dropdown.Item>
               <Dropdown.Item>⚙️ Settings</Dropdown.Item>
+               <Dropdown.Item onClick={()=>{localStorage.clear(); return navigate("/login")}}
+               > <FaSignOutAlt /> LogOut</Dropdown.Item>
             </Dropdown.Menu>
           </Dropdown>
         </div>
@@ -352,11 +435,15 @@ export default function UserDashBord() {
                       Save ₹
                       {selectedProduct.price - selectedProduct.discount_price}
                     </h6>
+                    //todo Incomplete to show likes using key and values
                     <p className="text-secondary">
                       👁 Views: {views[selectedProduct.id] || 0} | ❤️ Likes:{" "}
-                      {likes[selectedProduct.id] ? 1 : 0}
+                      {allLikes[selectedProduct.id]
+                        ? allLikes[selectedProduct.id]
+                        : 0}
+                      {/* {console.log(likes)} //!
+                      {console.log(selectedProduct.id)} */}
                     </p>
-
                     <button
                       className="btn btn-success btn-lg mt-3"
                       onClick={() => addToCart(selectedProduct)}
