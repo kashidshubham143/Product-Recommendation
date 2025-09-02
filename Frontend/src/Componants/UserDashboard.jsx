@@ -11,7 +11,13 @@ import { useNavigate } from "react-router-dom";
 
 export default function UserDashBoard() {
 
+
 console.log("UserDashboard rendered at", new Date().toISOString());
+
+  //! add jwt token
+
+  console.log(" Runing ");
+
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [refresh, setRefresh] = useState(0);
@@ -28,14 +34,21 @@ console.log("UserDashboard rendered at", new Date().toISOString());
 
   //Check user Valid or not ??
   useEffect(() => {
+
     if (!user.userId) { return;} //stop re-rendering 
     let token = localStorage.getItem("jwtToken");
     if (!user.userId || !token) {
       return navigate("/login");
+
+    let token = localStorage.getItem("jwtToken");
+    if (!user.userId && !token) {
+      navigate("/login");
+
     } else {
       UserService.getProfile(token)
         .then((e) => {
           // console.log(e.data);
+
           if(e.data!==user.userName) {
             return navigate("/login");
           };
@@ -45,6 +58,11 @@ console.log("UserDashboard rendered at", new Date().toISOString());
             return navigate("/login");
           }
           console.log(err)});
+
+          if(e.data!=user.userName) navigate("/login");
+        })
+        .catch((err) => console.log(err));
+
     }
   }, []);
 

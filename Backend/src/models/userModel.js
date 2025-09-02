@@ -90,6 +90,7 @@ exports.userView = (userId) => {
     });
   });
 }
+
 exports.fetchLikes = (userId) => {
   return new Promise((resolve, rejects) => {
     db.query("SELECT u.id AS id,p.name AS productName,p.description,p.price,p.image_url,p.discount_price,c.name AS categoryName FROM user_interactions u INNER JOIN products p ON p.id = u.product_id INNER JOIN categories c ON c.id = p.category_id WHERE u.user_id = ? and u.action_id=2", [userId], (err, row) => {

@@ -56,10 +56,49 @@ exports.LoginUser = (req, res) => {
   }).catch((err) => {
     console.log(err);
     res.send(err);
+
   });
 }
 exports.authenticateToken = (req, res, next) => {
   // console.log(req.headers);
+  let authHeader = req.headers['authorization'];
+  let token = authHeader && authHeader.split(' ')[1];
+  jwt.verify(token, process.env.JWTKEY, (err, valid) => {
+    if (err) {
+      res.status(403).send("Forbidden")
+    }
+    // console.log(valid.email);
+    let key = 'email';
+    let val = valid.email;
+    usermodel.userNameCheck(key, val).then((e) => {
+      // console.log(e[0].email);
+      res.send(e[0].name);
+    }).catch((err) => {
+      console.log(err);
+      res.send(err);
+    });
+
+  });
+}
+exports.authenticateToken = (req, res, next) => {
+  // console.log(req.headers);
+
+
+// Likes
+exports.showLikes = (req, res) => {
+  let { userId } = req.params;
+  // console.log(userId)
+  usermodel.showslike(userId).then((e) => {
+    // console.log(e);
+    res.send(e);
+  }).catch((err) => {
+    console.log(err);
+    res.send(err);
+  });
+}
+
+exports.manageLike = (req, res) => {
+
   let authHeader = req.headers['authorization'];
   let token = authHeader && authHeader.split(' ')[1];
   jwt.verify(token, process.env.JWTKEY, (err, valid) => {
@@ -93,6 +132,7 @@ exports.showLikes = (req, res) => {
 }
 
 exports.manageLike = (req, res) => {
+
 
   let { userId, productId, msg } = req.body;
   console.log(userId, productId, msg);
@@ -146,6 +186,7 @@ exports.fetchUserview = (req, res) => {
     // console.log(e);
     res.send(e);
   }).catch((err) => console.log(err));
+
 }
 exports.wishList=(req,res)=>{
   // console.log(req.params.userId);  
@@ -153,4 +194,5 @@ exports.wishList=(req,res)=>{
     // console.log(e);
     res.send(e);
   }).catch((err)=> res.send(err));
+
 }

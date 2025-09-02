@@ -46,9 +46,12 @@ const UserService = {
   },
   getProfile:(token)=>{ //Authenticate JWT Token
     return axios.get(`${API_URL}/getProfile`,{headers:{Authorization:`Bearer ${token}`}});
+
   },
   wishList:(userId)=>{
     return axios.get(`${API_URL}/wishList/${userId}`)
+
+
   }
 };
 

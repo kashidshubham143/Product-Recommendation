@@ -8,9 +8,16 @@ import AdminDashBoard from "./Componants/AdminDashBord";
 // Users
 import UserDashBoard from "./Componants/UserDashboard";
 import AddProductPage from "./Componants/AddProductPage";
+
 import UserContext from "./context/UserContext";
 import Wishlist from "./Componants/WishList";
 import ProfilePage from "./Componants/ProfilePage";
+
+import Clothes from "./Componants/Clothes";
+import Electronics from "./Componants/Electronics";
+import Shoes from "./Componants/Shoes";
+import UserContext from "./context/UserContext";
+
 
 function App() {
   const { setUser } = useContext(UserContext);
@@ -40,6 +47,19 @@ function App() {
         <Route path="/profile" element={<ProfilePage />}/>
       </Routes>
     </BrowserRouter> 
+
+        <Route path="/AdminDashBord" element={<AdminDashBoard />} />
+        <Route path="/UserDashBoard" element={<UserDashBoard />} />
+        <Route path="/AddProductPage" element={<AddProductPage />} />
+        <Route path="/Electronics" element={<Electronics />} />
+        <Route path="/Shoes" element={<Shoes />} />
+        <Route path="/Clothes" element={<Clothes />} />
+        <Route path="/" element={<Home token={token} />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/signup" element={<SignupPage />} />
+      </Routes>
+    </BrowserRouter>
+
   );
 }
 

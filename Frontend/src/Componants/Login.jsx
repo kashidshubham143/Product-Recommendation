@@ -21,14 +21,22 @@ function LoginPage() {
   };
 
   //fetched that function to set userId and Name
+
   const { user,setUser } = useContext(UserContext);
+
+  const { setUser } = useContext(UserContext);
+
 
   // check token had or not
   const token=localStorage.getItem("jwtToken");
 
   useEffect(()=>{
+
        if(user.userId && token) return navigate("/UserDashBoard");
        else return;
+
+       if(token) navigate("/UserDashBoard");
+
   },[token]);
 
   //Submit Check User and Adminn are had in DB
@@ -66,7 +74,11 @@ function LoginPage() {
               userName: result.data.data[0].name,
             });
             // setTokenCheck((prev)=>prev+1);
+
             return navigate("/UserDashBoard"); // Navigate User Dashboard
+
+            navigate("/UserDashBoard"); // Navigate User Dashboard
+
           }
         })
         .catch((err) => {

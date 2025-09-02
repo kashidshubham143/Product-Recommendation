@@ -19,6 +19,7 @@ router.post("/addView",user.addView);
 router.get("/fetchViews",user.fetchViews);
 router.get("/fetchUserview/:userId",user.fetchUserview);
 
+
 router.get("/wishList/:userId",user.wishList);
 
 //Inside the Menu option
