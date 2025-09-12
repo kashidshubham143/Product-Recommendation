@@ -18,16 +18,18 @@ import {
   FaDollarSign,
   FaImage,
   FaPlusCircle,
+  FaSearch,
 } from "react-icons/fa";
 import AdminService from "../Service/AdminService";
 
 const ProductManager = () => {
-  const [msg, setMsg] = useState();
-  const [refersh, setRefresh] = useState(0);
+  const [msg, setMsg] = useState("");
+  const [refresh, setRefresh] = useState(0);
   const [products, setProducts] = useState([]);
   const [categoryData, setCategoryData] = useState([]);
   const [show, setShow] = useState(false);
   const [editProduct, setEditProduct] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
 
   const [formData, setFormData] = useState({
     id: "",
@@ -42,11 +44,9 @@ const ProductManager = () => {
   // Fetch products
   useEffect(() => {
     AdminService.viweProduct()
-      .then((result) => {
-        setProducts(result.data);
-      })
+      .then((result) => setProducts(result.data))
       .catch((err) => console.log(err));
-  }, [refersh]);
+  }, [refresh]);
 
   const handleShow = () => {
     AdminService.showCategories()
@@ -90,21 +90,16 @@ const ProductManager = () => {
       ? { ...formData, id: editProduct.id }
       : { ...formData, id: 0 };
 
-    if (editProduct) {
-      AdminService.updateProduct(finalProduct)
-        .then((result) => {
-          setMsg(result.data);
-          setRefresh((ref) => ref + 1);
-        })
-        .catch((err) => setMsg(err.data));
-    } else {
-      AdminService.saveProduct(finalProduct)
-        .then((result) => {
-          setMsg(result.data);
-          setRefresh((ref) => ref + 1);
-        })
-        .catch((err) => setMsg(err.data));
-    }
+    const action = editProduct
+      ? AdminService.updateProduct(finalProduct)
+      : AdminService.saveProduct(finalProduct);
+
+    action
+      .then((result) => {
+        setMsg(result.data);
+        setRefresh((prev) => prev + 1);
+      })
+      .catch((err) => setMsg(err.data));
 
     setTimeout(() => setMsg(""), 5000);
     handleClose();
@@ -121,30 +116,73 @@ const ProductManager = () => {
       .then((result) => {
         setMsg(result.data);
         setTimeout(() => setMsg(""), 5000);
-        setRefresh((ref) => ref + 1);
+        setRefresh((prev) => prev + 1);
       })
       .catch((err) => console.log(err));
   };
 
+  // Filter products based on search term
+  const filteredProducts = products.filter(
+    (p) =>
+      p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      p.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (p.categoryName &&
+        p.categoryName.toLowerCase().includes(searchTerm.toLowerCase()))
+  );
+
   return (
     <div className="container my-4">
       <h2 className="text-center fw-bold mb-3">📦 Product Manager</h2>
-      <strong className="mb-2 mt-2 d-block bg-success text-center text-warning fs-5 rounded-pill mx-5">
-        {msg}
-      </strong>
+      {msg && (
+        <strong className="mb-2 mt-2 d-block bg-success text-center text-warning fs-5 rounded-pill mx-5">
+          {msg}
+        </strong>
+      )}
 
-      <div className="d-flex justify-content-end mb-3">
-        <Button variant="success" onClick={handleShow} className="shadow">
-          <FaPlusCircle className="me-3 my-2" /> Add Product
+      {/* Search Bar */}
+     <div className="d-flex flex-column flex-md-row justify-content-center align-items-center mb-4 gap-3">
+  {/* Search Bar */}
+  <InputGroup className="shadow-sm rounded-pill overflow-hidden w-50 w-md-50">
+    <InputGroup.Text className="bg-white border-0">
+      <FaSearch />
+    </InputGroup.Text>
+    <Form.Control
+      type="text"
+      placeholder="Search products by name, description, category..."
+      value={searchTerm}
+      onChange={(e) => setSearchTerm(e.target.value)}
+      className="border-0 shadow-none"
+    />
+  </InputGroup>
+
+  {/* Add Product Button */}
+  <Button
+    variant="success"
+    onClick={handleShow}
+    className="shadow px-4 rounded-pill d-flex align-items-center"
+  >
+    <FaPlusCircle className="me-2" /> Add Product
+  </Button>
+</div>
+
+
+      {/* Add Product Button */}
+      {/* <div className="d-flex justify-content-center mb-3">
+        <Button
+          variant="success"
+          onClick={handleShow}
+          className="shadow px-4 rounded-pill"
+        >
+          <FaPlusCircle className="me-2" /> Add Product
         </Button>
-      </div>
+      </div> */}
 
       {/* Product Cards */}
       <Row className="mt-4">
-        {products.length === 0 && (
-          <p className="text-center w-100 mt-3">No products added yet.</p>
+        {filteredProducts.length === 0 && (
+          <p className="text-center w-100 mt-3">No products found.</p>
         )}
-        {products.map((p) => (
+        {filteredProducts.map((p) => (
           <Col md={4} sm={6} xs={12} key={p.id} className="mb-4">
             <Card className="shadow-lg glass-card h-100">
               <Card.Img
@@ -199,7 +237,7 @@ const ProductManager = () => {
         ))}
       </Row>
 
-      {/* Modal */}
+      {/* Add/Edit Modal */}
       <Modal show={show} onHide={handleClose} centered>
         <Modal.Header closeButton className="bg-primary text-white">
           <Modal.Title>

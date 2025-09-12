@@ -38,7 +38,9 @@ const AdminService = {
   deleteProduct: (id) => {
     return axios.delete(`${API_URL}/deleteProd/${id}`)
   },
-
+   getOrders: () => axios.get(`${API_URL}/orders`),
+   updateOrderStatus: (orderId, status) =>
+  axios.put(`${API_URL}/orders/${orderId}/status`, { status }),
 }
 
 export default AdminService; 
